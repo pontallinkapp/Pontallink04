@@ -1,0 +1,225 @@
+import React, { useEffect, useState } from 'react';
+import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import dadosGlobais from '../../DBTeste/dadosGlobais'; // Substitua pelo caminho real
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
+import { fetchUsers } from '../../apis/fetchUsers';
+import { useSelector, useDispatch } from 'react-redux'; // Acessando Redux
+//import globalData, { allUsersData } from './GlobalData';
+
+export default function BuscaGlobal() {
+
+  const [users, setUsers] = useState([]);
+
+  const token = useSelector((state) => state.auth.token);
+
+    useEffect(() => {
+        const getUser = async () => {
+            if (token) {
+                //Este UsersData é com o back
+                const usersData = await fetchUsers(token);
+                console.log('\nDados dos usuários(pesquisa):\n', usersData, "\n");
+                setUsers(usersData);
+            } else {
+                console.log('Nenhum token encontrado, não é possível buscar usuários.');
+            }
+        };
+
+        getUser();
+    }, [token]);
+
+    console.log("Usuarios allUsersData: \n", users);
+
+  const navigation = useNavigation();
+
+  const [filtrosSelecionados, setFiltrosSelecionados] = useState({
+    publicacoes: true,
+    usuarios: true,
+    fotos: true,
+    videos: true,
+    comunidades: true,
+    grupos: true,
+  });
+
+  const toggleFiltro = (filtro) => {
+    setFiltrosSelecionados((prevFiltros) => ({
+      ...prevFiltros,
+      [filtro]: !prevFiltros[filtro],
+    }));
+  };
+  
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredResults = users.filter((user) => {
+    if (searchTerm.trim() === '') {
+      return false; // Retorna falso para não incluir nada se a barra de pesquisa estiver vazia
+    }
+    const nomeIncludes = user.nome.toLowerCase().includes(searchTerm.toLowerCase());
+    // Aqui você pode adicionar as condições de filtro específicas, se necessário
+    const filterCondition =
+      (searchTerm ? nomeIncludes : true) &&
+      (filtrosSelecionados.publicacoes || filtrosSelecionados.usuarios);
+  
+    return filterCondition;
+  });
+  
+  const handlePerfil = (id) => {
+    navigation.navigate('Perfil', { userId: id }); // Passando o ID como parâmetro
+  }
+
+  return (
+    <View>
+      
+      <View style={styles.section}>
+        
+        <View style={styles.divPesquisa}>
+          <TextInput
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+            style={styles.pesquisaText}
+          />
+        </View>
+        
+
+        <View style={styles.botoesFiltro}>
+          <TouchableOpacity
+            style={[styles.botaoFiltro, { backgroundColor: filtrosSelecionados.publicacoes ? 'blue' : 'gray' }]}
+            onPress={() => toggleFiltro('publicacoes')}
+          >
+            <Text style={styles.textoBotaoFiltro}>Publicações</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.botaoFiltro, { backgroundColor: filtrosSelecionados.usuarios ? 'blue' : 'gray' }]}
+            onPress={() => toggleFiltro('usuarios')}
+          >
+            <Text style={styles.textoBotaoFiltro}>Usuarios</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+              style={[styles.botaoFiltro, { backgroundColor: filtrosSelecionados.comunidades ? 'blue' : 'gray' }]}
+              onPress={() => toggleFiltro('comunidades')}
+          >
+              <Text style={styles.textoBotaoFiltro}>Comunidades</Text>
+            </TouchableOpacity>
+
+          {/* Adicione botões para outros filtros da mesma maneira */}
+        </View>
+        <View style={styles.botoesFiltro}>
+            <TouchableOpacity
+              style={[styles.botaoFiltro, { backgroundColor: filtrosSelecionados.fotos ? 'blue' : 'gray' }]}
+              onPress={() => toggleFiltro('fotos')}
+            >
+              <Text style={styles.textoBotaoFiltro}>Fotos</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={[styles.botaoFiltro, { backgroundColor: filtrosSelecionados.videos ? 'blue' : 'gray' }]}
+                onPress={() => toggleFiltro('videos')}
+            >
+                <Text style={styles.textoBotaoFiltro}>Videos</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.botaoFiltro, { backgroundColor: filtrosSelecionados.grupos ? 'blue' : 'gray' }]}
+              onPress={() => toggleFiltro('grupos')}
+            >
+              <Text style={styles.textoBotaoFiltro}>Grupos</Text>
+            </TouchableOpacity>
+        </View>
+        <FlatList
+          data={filteredResults}
+          keyExtractor={(item, index) => `${index}`}
+          renderItem={({ item }) => (
+            <View>
+              <ScrollView
+              vertical showsVerticalScrollIndicator={false}
+              // Oculta a barra de rolagem horizontal>
+              >
+                <TouchableOpacity style={[styles.estiloMensagem, {backgroundColor: "red"}]} onPress={() => handlePerfil(item.id)}>
+
+                  <View style={styles.imageText}>
+                    <Image source={{uri: item.image}} style={styles.imagemPerfil}/>
+                    <Text style={styles.remetente}>{item.nome}</Text>
+                  </View>
+
+                </TouchableOpacity>
+              </ScrollView>
+              {/* Adicione mais informações conforme necessário */}
+            </View>
+          )}
+        />
+      </View>
+      <Footer/>
+    </View>
+  );
+}
+
+
+const styles = StyleSheet.create({
+  section: {
+    height: "87%",
+    backgroundColor: "#a3d9ff"
+  },
+  botoesFiltro:{
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  botaoFiltro: {
+    backgroundColor: 'gray',
+    borderRadius: 5,
+    marginLeft: 10,
+    marginBottom: 2,
+    padding: 5
+  },
+  textoBotaoFiltro: {
+    color: 'white',
+    fontSize: 17,
+    padding: 5,
+  },
+  estiloMensagem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    height: 60,
+    width: "98%",
+    borderRadius: 20,
+    margin: 5
+
+  },
+  imageText:{
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  remetente:{
+    fontWeight: "bold",
+    textAlign: "center",
+    
+  },
+  imagemPerfil:{
+    width: 50,
+    height: 50,
+    borderRadius: 30,
+    marginRight: 8,
+    marginLeft: 5
+
+  },
+  espaco:{
+      margin: 30,
+      backgroundColor: "red"
+  },
+  divPesquisa:{
+    borderWidth: 5,
+    borderRadius: 3,
+    margin: 3,
+    
+  },
+  pesquisaText:{
+    height: 40,
+    fontSize: 18
+  }
+
+});

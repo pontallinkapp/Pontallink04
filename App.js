@@ -1,17 +1,19 @@
 import React from "react";
 import { SafeAreaView, StatusBar } from "react-native";
 import { NavigationContainer } from '@react-navigation/native';
-import Rotas from "./src/rotas/Rotas";
-import Login from "./src/telas/Login/Login";
-import Feed from "./src/telas/Feed/Feed";
-import Perfil from "./src/telas/Perfil/Perfil";
+import { Provider } from "react-redux";
+import store from "./src/redux/store";
+
+import Rotas from "./src/navigation/Rotas";
 
 function App() {
   return (
-    <NavigationContainer>
+    <Provider store={store}>
+      <NavigationContainer>
         <StatusBar backgroundColor="#7EA5D9" barStyle="light-content" />
         <Rotas />
-    </NavigationContainer>
+      </NavigationContainer>
+    </Provider>
   );
 }
 
